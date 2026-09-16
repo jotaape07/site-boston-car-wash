@@ -1,0 +1,71 @@
+
+{% extends "admin_base.html" %}
+{% block title %}Relatórios | Admin{% endblock %}
+{% block admin_content %}
+<div class="dash-head">
+  <div>
+    <div class="eyebrow">RELATÓRIOS</div>
+    <h1>Desempenho mensal</h1>
+    <p>Resumo financeiro, serviços e comissões do período.</p>
+  </div>
+  <a class="btn primary" href="{{ url_for('admin_reports_xlsx', month=selected_month) }}">Baixar Excel</a>
+</div>
+
+<form class="month-filter" method="get">
+  <label>Mês<input type="month" name="month" value="{{ selected_month }}"></label>
+  <button class="small-btn">Atualizar</button>
+</form>
+
+<div class="metric-grid">
+  <div class="metric income"><span>Faturamento</span><b>{{ income|brl }}</b></div>
+  <div class="metric expense"><span>Despesas</span><b>{{ expenses|brl }}</b></div>
+  <div class="metric profit"><span>Lucro líquido</span><b>{{ profit|brl }}</b></div>
+  <div class="metric"><span>Serviços concluídos</span><b>{{ completed_count }}</b></div>
+  <div class="metric"><span>Ticket médio</span><b>{{ ticket_avg|brl }}</b></div>
+  <div class="metric"><span>Período</span><b class="date-metric">{{ start_date.strftime('%d/%m') }}–{{ end_date.strftime('%d/%m') }}</b></div>
+</div>
+
+<div class="reports-grid">
+  <section class="panel">
+    <h2>Receita por serviço</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Serviço</th><th>Qtd.</th><th>Valor</th></tr></thead>
+        <tbody>
+        {% for name, count, total in service_summary %}
+          <tr><td>{{ name }}</td><td>{{ count }}</td><td class="income">{{ total|brl }}</td></tr>
+        {% else %}<tr><td colspan="3">Sem serviços concluídos no período.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Despesas por categoria</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Categoria</th><th>Total</th></tr></thead>
+        <tbody>
+        {% for category, total in expense_summary %}
+          <tr><td>{{ category }}</td><td class="expense">{{ total|brl }}</td></tr>
+        {% else %}<tr><td colspan="2">Sem despesas no período.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Comissões da equipe</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Funcionário</th><th>Serviços</th><th>Valor gerado</th><th>Comissão</th></tr></thead>
+      <tbody>
+      {% for name, count, generated, commission in commissions %}
+        <tr><td>{{ name }}</td><td>{{ count }}</td><td>{{ generated|brl }}</td><td class="expense">{{ commission|brl }}</td></tr>
+      {% else %}<tr><td colspan="4">Nenhuma comissão no período.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

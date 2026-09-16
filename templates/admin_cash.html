@@ -1,0 +1,157 @@
+
+{% extends "admin_base.html" %}
+{% block title %}Caixa Diário | Admin{% endblock %}
+{% block admin_content %}
+<div class="dash-head">
+  <div>
+    <div class="eyebrow">CAIXA DIÁRIO</div>
+    <h1>Movimento e fechamento</h1>
+    <p>O total do dia e o dinheiro físico são calculados separadamente para não misturar Pix/cartão com espécie.</p>
+  </div>
+</div>
+
+<form class="month-filter" method="get">
+  <label>Data<input type="date" name="date" value="{{ selected_date.isoformat() }}"></label>
+  <button class="small-btn">Carregar</button>
+</form>
+
+<div class="metric-section-title">Resultado operacional</div>
+<div class="metric-grid three">
+  <div class="metric income"><span>Entradas totais</span><b>{{ income|brl }}</b><small>Pix + cartão + dinheiro + outros</small></div>
+  <div class="metric expense"><span>Saídas totais</span><b>{{ expenses|brl }}</b><small>Todos os gastos do dia</small></div>
+  <div class="metric profit"><span>Resultado do dia</span><b>{{ operational_result|brl }}</b><small>Entradas − saídas</small></div>
+</div>
+
+<div class="payment-strip editable-strip">
+  <div class="payment-strip-title">
+    <span>Entradas por forma de pagamento</span>
+    <small>Clique em Pix, Dinheiro, Cartão ou outra forma para lançar/corrigir o valor manual deste dia.</small>
+  </div>
+
+  <div class="payment-pills editable-payment-grid">
+    {% set methods = ['Pix', 'Dinheiro', 'Cartão', 'Transferência', 'Outro'] %}
+    {% for method in methods %}
+      {% set total = payment_methods.get(method, 0) %}
+      {% set manual = manual_payments.get(method, 0) %}
+      {% set automatic = total - manual %}
+
+      <div class="editable-payment-pill"
+           data-payment-card
+           data-automatic="{{ automatic }}"
+           data-current-manual="{{ manual }}">
+        <button type="button" class="payment-card-button" data-payment-open>
+          <span class="payment-card-top">
+            <i>{{ method|upper }}</i>
+            <span class="payment-pencil">✎</span>
+          </span>
+          <b data-payment-total>{{ total|brl }}</b>
+          <small>Automático {{ automatic|brl }} • Manual {{ manual|brl }}</small>
+        </button>
+
+        <form method="post"
+              action="{{ url_for('admin_set_manual_payment') }}"
+              class="payment-inline-editor"
+              data-payment-editor
+              hidden>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="date" value="{{ selected_date.isoformat() }}">
+          <input type="hidden" name="payment_method" value="{{ method }}">
+
+          <label>Valor manual
+            <div class="money-field">
+              <i>R$</i>
+              <input name="amount"
+                     value="{{ ('%.2f'|format(manual|float)).replace('.', ',') }}"
+                     inputmode="decimal"
+                     data-payment-input>
+            </div>
+          </label>
+
+          <div class="payment-preview">
+            Total previsto: <strong data-payment-preview>{{ total|brl }}</strong>
+          </div>
+
+          <div class="price-edit-actions">
+            <button class="small-btn" type="submit">Salvar e recalcular</button>
+            <button class="cancel-edit-btn" type="button" data-payment-cancel>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="metric-section-title">Dinheiro físico no caixa</div>
+<div class="metric-grid four">
+  <div class="metric"><span>Abertura</span><b>{{ opening|brl }}</b></div>
+  <div class="metric income"><span>Entrou em dinheiro</span><b>{{ cash_income|brl }}</b></div>
+  <div class="metric expense"><span>Saiu em dinheiro</span><b>{{ cash_expense|brl }}</b></div>
+  <div class="metric cash-metric"><span>Saldo físico esperado</span><b>{{ expected|brl }}</b></div>
+</div>
+
+<div class="admin-grid">
+  <section class="panel">
+    <h2>Abertura / observações</h2>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Valor de abertura em espécie<input name="opening_balance" value="{{ cash.opening_balance if cash else '0' }}"></label>
+      <label>Observações<textarea name="notes" rows="4">{{ cash.notes if cash else '' }}</textarea></label>
+      <button class="btn primary">Salvar caixa do dia</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Fechamento físico</h2>
+    {% if cash and cash.closed %}
+      <div class="summary-list">
+        <div><span>Valor contado</span><b>{{ cash.closing_balance|brl }}</b></div>
+        <div><span>Esperado</span><b>{{ expected|brl }}</b></div>
+        <div><span>Diferença</span><b class="{{ 'income' if difference == 0 else 'expense' }}">{{ difference|brl }}</b></div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('admin_close_cash') }}" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="date" value="{{ selected_date.isoformat() }}">
+      <label>Quanto há em dinheiro físico?<input name="closing_balance" value="{{ cash.closing_balance if cash and cash.closing_balance is not none else expected }}"></label>
+      <label>Observações finais<textarea name="notes" rows="3">{{ cash.notes if cash else '' }}</textarea></label>
+      <button class="btn primary">Fechar caixa</button>
+    </form>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-title">
+    <div><h2>Serviços concluídos</h2><p class="muted panel-subtitle">Cada conclusão gera automaticamente uma entrada financeira.</p></div>
+    <span class="today-label">{{ completed_services|length }} concluído(s)</span>
+  </div>
+  <div class="completed-service-grid">
+    {% for a in completed_services %}
+    <div class="completed-service-item">
+      <div><b>{{ a.client.name }}</b><span>{{ a.service.name }} • {{ a.vehicle }}</span></div>
+      <div class="completed-service-money"><b>{{ a.amount|brl }}</b><span>{{ a.payment_method }}</span></div>
+    </div>
+    {% else %}
+    <p class="muted">Nenhum serviço concluído neste dia.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title"><h2>Todas as movimentações</h2><a href="{{ url_for('admin_finance') }}">Abrir financeiro</a></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Forma</th><th>Valor</th></tr></thead>
+      <tbody>
+      {% for t in transactions %}
+        <tr>
+          <td><span class="badge {{ t.kind }}">{{ 'Receita' if t.kind=='income' else 'Despesa' }}</span></td>
+          <td>{{ t.category }}</td><td>{{ t.description }}</td><td>{{ t.payment_method }}</td>
+          <td class="{{ t.kind }}">{{ t.amount|brl }}</td>
+        </tr>
+      {% else %}<tr><td colspan="5">Nenhuma movimentação nesse dia.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

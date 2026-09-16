@@ -1,0 +1,86 @@
+
+{% extends "admin_base.html" %}
+{% block title %}Financeiro | Admin{% endblock %}
+{% block admin_content %}
+<div class="dash-head">
+  <div>
+    <div class="eyebrow">CONTROLE FINANCEIRO</div>
+    <h1>Receitas, gastos e lucro</h1>
+    <p>Produtos, água, energia, manutenção, funcionários e qualquer outra despesa ficam aqui — sem controle de estoque.</p>
+  </div>
+</div>
+
+<form class="month-filter" method="get">
+  <label>Mês<input type="month" name="month" value="{{ selected_month }}"></label>
+  <button class="small-btn">Filtrar</button>
+</form>
+
+<div class="metric-grid three">
+  <div class="metric income"><span>Receitas</span><b>{{ total_income|brl }}</b></div>
+  <div class="metric expense"><span>Despesas</span><b>{{ total_expense|brl }}</b></div>
+  <div class="metric profit"><span>Lucro líquido</span><b>{{ total_profit|brl }}</b></div>
+</div>
+
+<div class="admin-grid">
+  <section class="panel">
+    <h2>Novo lançamento</h2>
+    <form method="post" class="form-grid two">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Tipo
+        <select name="kind" required>
+          <option value="income">Receita</option>
+          <option value="expense">Despesa</option>
+        </select>
+      </label>
+      <label>Categoria<input name="category" placeholder="Ex.: Produtos, água, energia..." required></label>
+      <label class="full">Descrição<input name="description" placeholder="Ex.: Compra de shampoo automotivo" required></label>
+      <label>Valor<input name="amount" inputmode="decimal" placeholder="0,00" required></label>
+      <label>Forma de pagamento
+        <select name="payment_method">
+          <option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Boleto</option><option>Transferência</option><option>Outro</option>
+        </select>
+      </label>
+      <label>Data<input type="date" name="date"></label>
+      <button class="btn primary full">Salvar lançamento</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Categorias sugeridas</h2>
+    <div class="tag-list">
+      <span>Serviços</span><span>Produtos / insumos</span><span>Água</span><span>Energia</span>
+      <span>Aluguel</span><span>Manutenção</span><span>Marketing</span><span>Funcionários</span>
+      <span>Comissão</span><span>Impostos</span><span>Outros</span>
+    </div>
+    <p class="muted finance-note">Quando um atendimento é marcado como concluído, a receita entra automaticamente. Se houver funcionário com comissão, a comissão também entra como despesa automática.</p>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-title"><h2>Histórico financeiro</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Forma</th><th>Valor</th><th></th></tr></thead>
+      <tbody>
+      {% for t in transactions %}
+        <tr>
+          <td>{{ t.date.strftime('%d/%m/%Y') }}</td>
+          <td><span class="badge {{ t.kind }}">{{ 'Receita' if t.kind=='income' else 'Despesa' }}</span></td>
+          <td>{{ t.category }}{% if t.automatic %}<small>Automático</small>{% endif %}</td>
+          <td>{{ t.description }}</td><td>{{ t.payment_method }}</td>
+          <td class="{{ t.kind }}">{{ t.amount|brl }}</td>
+          <td>
+            {% if not t.automatic %}
+            <form method="post" action="{{ url_for('admin_delete_transaction', transaction_id=t.id) }}" onsubmit="return confirm('Excluir este lançamento?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="danger-btn">Excluir</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="7">Nenhum lançamento neste mês.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
