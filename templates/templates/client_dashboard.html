@@ -1,0 +1,125 @@
+
+{% extends "base.html" %}
+{% block title %}Minha área | Boston Car Wash{% endblock %}
+{% block content %}
+<section class="dashboard-wrap">
+  <div class="container">
+    <div class="dash-head">
+      <div>
+        <div class="eyebrow">ÁREA DO CLIENTE</div>
+        <h1>Olá, {{ current_user.name }}.</h1>
+        <p>Cadastre seus carros, agende e acompanhe seus serviços.</p>
+      </div>
+    </div>
+
+    <div class="client-grid">
+      <section class="panel">
+        <h2>Novo agendamento</h2>
+        <form method="post" action="{{ url_for('client_book') }}" class="form-grid two">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Serviço
+            <select name="service_id" required>
+              <option value="">Selecione</option>
+              {% for s in services %}<option value="{{ s.id }}">{{ s.name }} — {{ s.price|brl }}</option>{% endfor %}
+            </select>
+          </label>
+
+          <label>Veículo salvo
+            <select name="vehicle_id">
+              <option value="">Usar outro veículo</option>
+              {% for v in vehicles %}
+              <option value="{{ v.id }}">{{ v.display_name }}{% if v.plate %} • {{ v.plate }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>Outro veículo<input name="vehicle" placeholder="Ex.: Honda Civic 2022"></label>
+          <label>Placa<input name="plate" placeholder="ABC1D23"></label>
+          <label>Data<input type="date" name="date" required></label>
+          <label>Horário<input type="time" name="time" required></label>
+          <label class="full">Observações<textarea name="notes" rows="3" placeholder="Algo que deseja informar?"></textarea></label>
+          <button class="btn primary full" type="submit">Solicitar agendamento</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Próximos atendimentos</h2>
+        {% if upcoming %}
+          <div class="stack">
+            {% for a in upcoming %}
+            <div class="appointment-card">
+              <div><b>{{ a.service.name }}</b><span>{{ a.vehicle }}{% if a.plate %} • {{ a.plate }}{% endif %}</span></div>
+              <div class="right"><b>{{ a.scheduled_date.strftime('%d/%m/%Y') }}</b><span>{{ a.scheduled_time }}</span></div>
+              <span class="badge {{ a.status }}">{{ a.status.replace('_',' ') }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">Você ainda não tem agendamentos futuros.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="client-grid">
+      <section class="panel">
+        <h2>Meus veículos</h2>
+        <form method="post" action="{{ url_for('client_add_vehicle') }}" class="form-grid two compact-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Marca<input name="brand" placeholder="Honda" required></label>
+          <label>Modelo<input name="model" placeholder="Civic" required></label>
+          <label>Ano<input name="year" placeholder="2022"></label>
+          <label>Placa<input name="plate" placeholder="ABC1D23"></label>
+          <label>Cor<input name="color" placeholder="Preto"></label>
+          <button class="btn primary">Salvar veículo</button>
+        </form>
+
+        <div class="stack vehicle-list">
+          {% for v in vehicles %}
+          <div class="service-admin">
+            <div>
+              <b>{{ v.display_name }}</b>
+              <span>{{ v.plate or 'Sem placa' }}{% if v.color %} • {{ v.color }}{% endif %}</span>
+            </div>
+            <form method="post" action="{{ url_for('client_delete_vehicle', vehicle_id=v.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="danger-btn">Remover</button>
+            </form>
+          </div>
+          {% else %}
+          <p class="muted">Nenhum veículo salvo ainda.</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Resumo da conta</h2>
+        <div class="summary-list">
+          <div><span>Veículos salvos</span><b>{{ vehicles|length }}</b></div>
+          <div><span>Atendimentos registrados</span><b>{{ history|length }}</b></div>
+          <div><span>Próximos agendamentos</span><b>{{ upcoming|length }}</b></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>Histórico</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Serviço</th><th>Veículo</th><th>Status</th><th>Valor</th></tr></thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td>{{ a.scheduled_date.strftime('%d/%m/%Y') }} {{ a.scheduled_time }}</td>
+              <td>{{ a.service.name }}</td>
+              <td>{{ a.vehicle }}</td>
+              <td><span class="badge {{ a.status }}">{{ a.status.replace('_',' ') }}</span></td>
+              <td>{{ a.amount|brl }}</td>
+            </tr>
+            {% else %}<tr><td colspan="5">Nenhum atendimento ainda.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+{% endblock %}
