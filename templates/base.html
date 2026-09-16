@@ -1,0 +1,61 @@
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Boston Car Wash{% endblock %}</title>
+  <meta name="theme-color" content="#03111d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a href="{{ url_for('home') }}" class="brand">
+        <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Boston Car Wash">
+        <span><b>BOSTON</b><small>CAR WASH</small></span>
+      </a>
+      <button class="menu-btn" data-menu>☰</button>
+      <nav class="menu">
+        <a href="{{ url_for('home') }}#servicos">Serviços</a>
+        <a href="{{ url_for('home') }}#motoristas">Motoristas</a>
+        <a href="{{ url_for('home') }}#diferenciais">Diferenciais</a>
+        <a href="{{ url_for('home') }}#localizacao">Localização</a>
+        {% if current_user.is_authenticated %}
+          {% if current_user.role == 'admin' %}
+            <a class="nav-cta" href="{{ url_for('admin_dashboard') }}">Minha área</a>
+          {% else %}
+            <a class="nav-cta" href="{{ url_for('client_dashboard') }}">Minha área</a>
+          {% endif %}
+          <a href="{{ url_for('logout') }}">Sair</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Entrar</a>
+          <a class="nav-cta" href="{{ url_for('register') }}">Criar conta</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <div class="flash-wrap container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    <div class="container footer-grid">
+      <div><b>Boston Car Wash</b><span>Excelência em cada detalhe.</span></div>
+      <div>Rua Francisco Marcos Stilliano Inglês de Souza, 487 - Vila Helena</div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
