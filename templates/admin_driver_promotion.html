@@ -4,108 +4,80 @@
 {% block admin_content %}
 <div class="dash-head">
   <div>
-    <div class="eyebrow">DIVULGAÇÃO NO SITE</div>
+    <div class="eyebrow">SITE</div>
     <h1>Promoção para motoristas</h1>
-    <p>Edite o valor do dia e os pacotes que aparecem publicamente no site.</p>
+    <p>Altere o valor do dia e os pacotes sem mexer no restante do site.</p>
   </div>
-  <a class="btn ghost" href="{{ url_for('home') }}#motoristas" target="_blank">Ver no site</a>
+  <a class="btn ghost" href="{{ url_for('home') }}#motoristas" target="_blank">Ver promoção</a>
 </div>
 
-<div class="admin-grid promo-admin-grid">
-  <section class="panel">
-    <div class="panel-title">
-      <h2>Valores da promoção</h2>
-      <span class="muted">Se deixar R$ 0,00, o site mostra “Consulte”.</span>
-    </div>
+<section class="panel">
+  <form method="post" class="form-grid two">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <form method="post" class="form-grid two">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="full promo-safe-toggle">
+      <span>Mostrar promoção no site</span>
+      <input type="checkbox" name="active" {% if promo and promo.active %}checked{% endif %}>
+    </label>
 
-      <label class="full promo-active-switch">
-        <span>Promoção visível no site</span>
-        <input type="checkbox" name="active" {% if promo.active %}checked{% endif %}>
-      </label>
-
-      <label>Valor do dia
-        <div class="price-input-wrap">
-          <span>R$</span>
-          <input name="daily_price" value="{{ ('%.2f'|format(promo.daily_price|float)).replace('.', ',') }}" inputmode="decimal">
-        </div>
-      </label>
-
-      <label>Texto do valor do dia
-        <input name="daily_note" value="{{ promo.daily_note }}" placeholder="Ex.: Lavagem promocional do dia">
-      </label>
-
-      <label>Pacote semanal — valor
-        <div class="price-input-wrap">
-          <span>R$</span>
-          <input name="weekly_price" value="{{ ('%.2f'|format(promo.weekly_price|float)).replace('.', ',') }}" inputmode="decimal">
-        </div>
-      </label>
-
-      <label>Pacote semanal — nº de lavagens
-        <input type="number" min="0" name="weekly_washes" value="{{ promo.weekly_washes }}">
-      </label>
-
-      <label>Pacote mensal — valor
-        <div class="price-input-wrap">
-          <span>R$</span>
-          <input name="monthly_price" value="{{ ('%.2f'|format(promo.monthly_price|float)).replace('.', ',') }}" inputmode="decimal">
-        </div>
-      </label>
-
-      <label>Pacote mensal — nº de lavagens
-        <input type="number" min="0" name="monthly_washes" value="{{ promo.monthly_washes }}">
-      </label>
-
-      <div class="form-section-title full">Textos públicos</div>
-
-      <label>Título
-        <input name="title" value="{{ promo.title }}">
-      </label>
-
-      <label>Público
-        <input name="audience" value="{{ promo.audience }}">
-      </label>
-
-      <label class="full">Subtítulo
-        <input name="subtitle" value="{{ promo.subtitle }}">
-      </label>
-
-      <label class="full">WhatsApp
-        <input name="whatsapp" value="{{ promo.whatsapp }}">
-      </label>
-
-      <button class="btn primary full" type="submit">Salvar promoção no site</button>
-    </form>
-  </section>
-
-  <section class="panel">
-    <h2>Prévia rápida</h2>
-    <div class="promo-admin-preview">
-      <span class="promo-kicker">OFERTA PARA QUEM RODA TODO DIA</span>
-      <h3>{{ promo.title }}</h3>
-      <p>{{ promo.subtitle }}</p>
-
-      <div class="promo-preview-card">
-        <span>VALOR DO DIA</span>
-        <b>{{ promo.daily_price|brl if promo.daily_price else 'Consulte' }}</b>
-        <small>{{ promo.daily_note }}</small>
+    <label>Valor do dia
+      <div class="price-input-wrap">
+        <span>R$</span>
+        <input name="daily_price"
+               value="{{ ('%.2f'|format(promo.daily_price|float)).replace('.', ',') if promo else '0,00' }}"
+               inputmode="decimal">
       </div>
+    </label>
 
-      <div class="promo-preview-card">
-        <span>PACOTE SEMANAL</span>
-        <b>{{ promo.weekly_price|brl if promo.weekly_price else 'Consulte' }}</b>
-        <small>{% if promo.weekly_washes %}{{ promo.weekly_washes }} lavagens{% else %}Quantidade editável{% endif %}</small>
-      </div>
+    <label>Descrição do valor do dia
+      <input name="daily_note" value="{{ promo.daily_note if promo else 'Valor especial do dia' }}">
+    </label>
 
-      <div class="promo-preview-card">
-        <span>PACOTE MENSAL</span>
-        <b>{{ promo.monthly_price|brl if promo.monthly_price else 'Consulte' }}</b>
-        <small>{% if promo.monthly_washes %}{{ promo.monthly_washes }} lavagens{% else %}Quantidade editável{% endif %}</small>
+    <label>Pacote semanal — valor
+      <div class="price-input-wrap">
+        <span>R$</span>
+        <input name="weekly_price"
+               value="{{ ('%.2f'|format(promo.weekly_price|float)).replace('.', ',') if promo else '0,00' }}"
+               inputmode="decimal">
       </div>
-    </div>
-  </section>
-</div>
+    </label>
+
+    <label>Lavagens no semanal
+      <input type="number" min="0" name="weekly_washes" value="{{ promo.weekly_washes if promo else 0 }}">
+    </label>
+
+    <label>Pacote mensal — valor
+      <div class="price-input-wrap">
+        <span>R$</span>
+        <input name="monthly_price"
+               value="{{ ('%.2f'|format(promo.monthly_price|float)).replace('.', ',') if promo else '0,00' }}"
+               inputmode="decimal">
+      </div>
+    </label>
+
+    <label>Lavagens no mensal
+      <input type="number" min="0" name="monthly_washes" value="{{ promo.monthly_washes if promo else 0 }}">
+    </label>
+
+    <div class="form-section-title full">Textos</div>
+
+    <label>Título
+      <input name="title" value="{{ promo.title if promo else 'Promoção para motoristas' }}">
+    </label>
+
+    <label>Público
+      <input name="audience" value="{{ promo.audience if promo else 'Motoristas de app, táxi e particular' }}">
+    </label>
+
+    <label class="full">Subtítulo
+      <input name="subtitle" value="{{ promo.subtitle if promo else 'Condições especiais para quem roda todos os dias' }}">
+    </label>
+
+    <label class="full">WhatsApp
+      <input name="whatsapp" value="{{ promo.whatsapp if promo else '+55 15 99665-4845' }}">
+    </label>
+
+    <button class="btn primary full" type="submit">Salvar promoção</button>
+  </form>
+</section>
 {% endblock %}

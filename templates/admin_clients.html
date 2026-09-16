@@ -1,0 +1,210 @@
+
+{% extends "admin_base.html" %}
+{% block title %}Clientes | Admin{% endblock %}
+{% block admin_content %}
+<div class="dash-head">
+  <div>
+    <div class="eyebrow">CLIENTES</div>
+    <h1>Clientes e recorrência</h1>
+    <p>Cadastre clientes manualmente e organize quem é semanal, quinzenal, mensal ou bimestral.</p>
+  </div>
+</div>
+
+<div class="admin-grid client-create-grid">
+  <section class="panel">
+    <h2>Cadastrar cliente</h2>
+    <p class="muted">Útil para cliente de balcão, mensalista ou alguém que ainda não criou conta no site.</p>
+
+    <form method="post" action="{{ url_for('admin_create_client') }}" class="form-grid two">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label>Nome
+        <input name="name" placeholder="Nome do cliente" required>
+      </label>
+
+      <label>Telefone / WhatsApp
+        <input name="phone" placeholder="(15) 99999-9999">
+      </label>
+
+      <label class="full">E-mail (opcional)
+        <input name="email" type="email" placeholder="cliente@email.com">
+      </label>
+
+      <div class="form-section-title full">Plano recorrente opcional</div>
+
+      <label>Frequência
+        <select name="frequency">
+          <option value="">Cliente avulso</option>
+          <option value="semanal">Semanal</option>
+          <option value="quinzenal">Quinzenal</option>
+          <option value="mensal">Mensal</option>
+          <option value="bimestral">Bimestral</option>
+        </select>
+      </label>
+
+      <label>Nome do plano
+        <input name="plan_name" placeholder="Ex.: Lavagem mensal">
+      </label>
+
+      <label>Serviço
+        <select name="service_id">
+          <option value="">Sem serviço definido</option>
+          {% for s in services %}
+          <option value="{{ s.id }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>Valor do plano
+        <input name="plan_amount" inputmode="decimal" placeholder="0,00">
+      </label>
+
+      <label>Próxima data
+        <input type="date" name="next_date">
+      </label>
+
+      <label>Observações
+        <input name="plan_notes" placeholder="Ex.: paga todo começo do mês">
+      </label>
+
+      <button class="btn primary full" type="submit">Cadastrar cliente</button>
+    </form>
+  </section>
+
+  <section class="panel client-help-panel">
+    <h2>Como funciona</h2>
+    <div class="client-help-list">
+      <div><span>01</span><p><b>Avulso</b> — cliente comum, sem frequência fixa.</p></div>
+      <div><span>02</span><p><b>Semanal / quinzenal</b> — acompanha a próxima visita.</p></div>
+      <div><span>03</span><p><b>Mensal / bimestral</b> — ideal para cliente fixo ou mensalista.</p></div>
+      <div><span>04</span><p>Depois da visita, clique em <b>Avançar data</b> para o sistema calcular automaticamente a próxima.</p></div>
+    </div>
+  </section>
+</div>
+
+<form class="search-bar" method="get">
+  <input name="q" value="{{ q }}" placeholder="Buscar por nome, e-mail ou telefone">
+  <button class="small-btn">Buscar</button>
+</form>
+
+<div class="client-admin-grid recurring-clients-grid">
+  {% for row in rows %}
+  <article class="client-admin-card recurring-client-card">
+    <div class="client-admin-head">
+      <div>
+        <h3>{{ row.client.name }}</h3>
+        {% if not row.client.email.endswith('@cadastro.local') %}
+          <span>{{ row.client.email }}</span>
+        {% else %}
+          <span>Cadastro feito pela administração</span>
+        {% endif %}
+        <span>{{ row.client.phone or 'Sem telefone' }}</span>
+      </div>
+
+      <div class="client-total">
+        {{ row.spent|brl }}
+        <small>total concluído</small>
+      </div>
+    </div>
+
+    <div class="client-stats">
+      <div><span>Visitas</span><b>{{ row.visits }}</b></div>
+      <div><span>Veículos</span><b>{{ row.vehicles|length }}</b></div>
+      <div><span>Planos ativos</span><b>{{ row.client.plans|selectattr('active')|list|length }}</b></div>
+    </div>
+
+    <div class="vehicle-tags">
+      {% for v in row.vehicles %}
+      <span>{{ v.display_name }}{% if v.plate %} • {{ v.plate }}{% endif %}</span>
+      {% else %}
+      <span>Nenhum veículo salvo</span>
+      {% endfor %}
+    </div>
+
+    <div class="client-plan-list">
+      {% for plan in row.client.plans %}
+      <div class="client-plan-card {{ 'inactive' if not plan.active else '' }}">
+        <div class="client-plan-main">
+          <span class="plan-frequency">{{ plan.frequency }}</span>
+          <b>{{ plan.plan_name }}</b>
+          <small>
+            {{ plan.service.name if plan.service else 'Serviço livre' }}
+            • {{ plan.amount|brl }}
+          </small>
+        </div>
+
+        <div class="client-plan-next">
+          <span>Próxima</span>
+          <b>{{ plan.next_date.strftime('%d/%m/%Y') if plan.next_date else 'Definir' }}</b>
+        </div>
+
+        <div class="client-plan-actions">
+          <form method="post" action="{{ url_for('admin_advance_plan', plan_id=plan.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="small-btn" type="submit">Avançar data</button>
+          </form>
+
+          <form method="post" action="{{ url_for('admin_toggle_plan', plan_id=plan.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="small-btn {{ 'off' if plan.active else '' }}" type="submit">
+              {{ 'Pausar' if plan.active else 'Ativar' }}
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="muted no-plan-text">Cliente sem plano recorrente.</p>
+      {% endfor %}
+    </div>
+
+    <details class="add-plan-details">
+      <summary>+ Adicionar plano recorrente</summary>
+
+      <form method="post"
+            action="{{ url_for('admin_add_client_plan', client_id=row.client.id) }}"
+            class="form-grid two mini-plan-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label>Frequência
+          <select name="frequency" required>
+            <option value="semanal">Semanal</option>
+            <option value="quinzenal">Quinzenal</option>
+            <option value="mensal" selected>Mensal</option>
+            <option value="bimestral">Bimestral</option>
+          </select>
+        </label>
+
+        <label>Nome
+          <input name="plan_name" placeholder="Lavagem mensal">
+        </label>
+
+        <label>Serviço
+          <select name="service_id">
+            <option value="">Livre</option>
+            {% for s in services %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>Valor
+          <input name="amount" inputmode="decimal" placeholder="0,00">
+        </label>
+
+        <label>Próxima data
+          <input type="date" name="next_date">
+        </label>
+
+        <label>Observações
+          <input name="notes" placeholder="Observação">
+        </label>
+
+        <button class="small-btn full" type="submit">Salvar plano</button>
+      </form>
+    </details>
+  </article>
+  {% else %}
+  <section class="panel"><p class="muted">Nenhum cliente encontrado.</p></section>
+  {% endfor %}
+</div>
+{% endblock %}

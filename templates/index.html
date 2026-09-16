@@ -28,67 +28,62 @@
   </div>
 </section>
 
-{% if driver_promo and driver_promo.active %}
-<section class="driver-promo-section" id="motoristas">
-  <div class="container">
-    <div class="driver-promo-shell">
-      <div class="driver-promo-glow"></div>
 
-      <div class="driver-promo-head">
+{% if driver_promo and driver_promo.active %}
+<section class="driver-promo-safe" id="motoristas">
+  <div class="container">
+    <div class="driver-promo-safe-box">
+      <div class="driver-promo-safe-head">
         <div>
-          <div class="eyebrow">PROMOÇÃO PARA QUEM RODA TODO DIA</div>
+          <div class="eyebrow">CONDIÇÃO ESPECIAL</div>
           <h2>{{ driver_promo.title }}</h2>
           <p>{{ driver_promo.subtitle }}</p>
         </div>
-        <span class="driver-audience">{{ driver_promo.audience }}</span>
+        <span>{{ driver_promo.audience }}</span>
       </div>
 
-      <div class="driver-promo-grid">
-        <article class="driver-offer-card daily">
-          <div class="offer-icon">R$</div>
-          <span>VALOR DO DIA</span>
-          <strong>{{ driver_promo.daily_price|brl if driver_promo.daily_price else 'Consulte' }}</strong>
+      <div class="driver-promo-safe-cards">
+        <article class="driver-promo-safe-card featured">
+          <small>VALOR DO DIA</small>
+          <b>{{ driver_promo.daily_price|brl if driver_promo.daily_price else 'Consulte' }}</b>
           <p>{{ driver_promo.daily_note }}</p>
         </article>
 
-        <article class="driver-offer-card">
-          <div class="offer-icon">7D</div>
-          <span>PACOTE SEMANAL</span>
-          <strong>{{ driver_promo.weekly_price|brl if driver_promo.weekly_price else 'Consulte' }}</strong>
+        <article class="driver-promo-safe-card">
+          <small>PACOTE SEMANAL</small>
+          <b>{{ driver_promo.weekly_price|brl if driver_promo.weekly_price else 'Consulte' }}</b>
           <p>
             {% if driver_promo.weekly_washes %}
-              {{ driver_promo.weekly_washes }} lavagens no pacote
+              {{ driver_promo.weekly_washes }} lavagens
             {% else %}
-              Monte a frequência ideal para sua rotina
+              Consulte a condição
             {% endif %}
           </p>
         </article>
 
-        <article class="driver-offer-card">
-          <div class="offer-icon">30D</div>
-          <span>PACOTE MENSAL</span>
-          <strong>{{ driver_promo.monthly_price|brl if driver_promo.monthly_price else 'Consulte' }}</strong>
+        <article class="driver-promo-safe-card">
+          <small>PACOTE MENSAL</small>
+          <b>{{ driver_promo.monthly_price|brl if driver_promo.monthly_price else 'Consulte' }}</b>
           <p>
             {% if driver_promo.monthly_washes %}
-              {{ driver_promo.monthly_washes }} lavagens no pacote
+              {{ driver_promo.monthly_washes }} lavagens
             {% else %}
-              Condição especial para cliente recorrente
+              Consulte a condição
             {% endif %}
           </p>
         </article>
       </div>
 
-      <div class="driver-promo-footer">
+      <div class="driver-promo-safe-footer">
         <div>
-          <b>Motorista de app, táxi ou particular?</b>
-          <span>Seu carro limpo, bem cuidado e pronto para rodar.</span>
+          <strong>Seu carro limpo, bem cuidado e pronto para rodar.</strong>
+          <span>Para motoristas de app, táxi e particular.</span>
         </div>
-        <a class="driver-whatsapp"
+        <a class="btn primary"
            target="_blank"
            rel="noopener"
-           href="https://wa.me/5515996654845?text=Ol%C3%A1%2C%20vi%20a%20promo%C3%A7%C3%A3o%20para%20motoristas%20no%20site%20da%20Boston%20Car%20Wash.">
-          <span>WhatsApp</span>
-          <b>{{ driver_promo.whatsapp }}</b>
+           href="https://wa.me/5515996654845?text=Ol%C3%A1%2C%20vi%20a%20promo%C3%A7%C3%A3o%20para%20motoristas%20no%20site.">
+          WhatsApp {{ driver_promo.whatsapp }}
         </a>
       </div>
     </div>

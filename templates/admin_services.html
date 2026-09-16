@@ -1,0 +1,103 @@
+
+{% extends "admin_base.html" %}
+{% block title %}Serviços | Admin{% endblock %}
+{% block admin_content %}
+<div class="dash-head">
+  <div>
+    <div class="eyebrow">CATÁLOGO</div>
+    <h1>Serviços e preços</h1>
+    <p>Clique na caneta ao lado do valor para editar o preço rapidamente.</p>
+  </div>
+</div>
+
+<div class="admin-grid">
+  <section class="panel">
+    <h2>Novo serviço</h2>
+    <form method="post" class="form-grid two">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Nome<input name="name" required></label>
+      <label>Preço<input name="price" placeholder="0,00" required></label>
+      <label>Duração (min)<input type="number" name="duration_minutes" value="60" min="1"></label>
+      <label class="full">Descrição<textarea name="description" rows="3"></textarea></label>
+      <button class="btn primary full">Adicionar serviço</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Edição rápida</h2>
+    <p class="muted">O preço salvo aqui aparece automaticamente no site para os próximos agendamentos.</p>
+    <div class="edit-hint">
+      <span class="pencil-demo">✎</span>
+      <span>Clique na caneta, altere o valor e aperte <b>Salvar</b>.</span>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-title">
+    <h2>Serviços cadastrados</h2>
+    <span class="muted">{{ services|length }} serviço(s)</span>
+  </div>
+
+  <div class="service-price-list">
+    {% for s in services %}
+    <article class="service-price-row">
+      <div class="service-info">
+        <div class="service-status-line">
+          <span class="badge {{ 'income' if s.active else 'expense' }}">{{ 'Ativo' if s.active else 'Desativado' }}</span>
+          <span class="service-duration">{{ s.duration_minutes }} min</span>
+        </div>
+        <h3>{{ s.name }}</h3>
+        <p>{{ s.description or 'Sem descrição.' }}</p>
+      </div>
+
+      <div class="service-price-control">
+        <div class="price-display" data-price-display="{{ s.id }}">
+          <strong>{{ s.price|brl }}</strong>
+          <button
+            type="button"
+            class="pencil-btn"
+            data-price-edit="{{ s.id }}"
+            aria-label="Editar preço de {{ s.name }}"
+            title="Editar valor"
+          >✎</button>
+        </div>
+
+        <form
+          method="post"
+          action="{{ url_for('admin_edit_service_price', service_id=s.id) }}"
+          class="price-edit-form"
+          data-price-form="{{ s.id }}"
+          hidden
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="price-input-wrap">
+            <span>R$</span>
+            <input
+              name="price"
+              value="{{ ('%.2f'|format(s.price|float)).replace('.', ',') }}"
+              inputmode="decimal"
+              autocomplete="off"
+              required
+            >
+          </div>
+          <div class="price-edit-actions">
+            <button class="small-btn" type="submit">Salvar</button>
+            <button class="cancel-edit-btn" type="button" data-price-cancel="{{ s.id }}">Cancelar</button>
+          </div>
+        </form>
+
+        <form method="post" action="{{ url_for('admin_toggle_service', service_id=s.id) }}" class="service-toggle-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="small-btn {{ 'off' if not s.active else '' }}">
+            {{ 'Desativar' if s.active else 'Ativar' }}
+          </button>
+        </form>
+      </div>
+    </article>
+    {% else %}
+      <p class="muted">Nenhum serviço cadastrado.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
